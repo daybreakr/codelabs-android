@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.daybreakr.codelabs.bt.model.scan.BluetoothScanner;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class BluetoothMainActivity extends AppCompatActivity {
     private static final String TAG = "Codelabs-BT";
 
-    private BluetoothScanner mScanner;
+    private BluetoothScanner mBluetoothScanner;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -22,46 +23,24 @@ public class BluetoothMainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_bluetooth_main);
 
-        findViewById(R.id.btn_bt_scan).setOnClickListener(this::startScanning);
+        FloatingActionButton btnScan = findViewById(R.id.btn_bt_scan);
+        btnScan.setOnClickListener(this::startScanning);
+
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null) {
+            btnScan.setEnabled(false);
+            btnScan.hide();
+        }
+
+        mBluetoothScanner = BluetoothScanner.newScanner(this, adapter, this);
+        mBluetoothScanner.setCallback(mScanCallback);
     }
 
     private void startScanning(View view) {
-        if (mScanner == null) {
-            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-            if (adapter == null) {
-                // Device not support Bluetooth.
-                return;
-            }
-            mScanner = BluetoothScanner.getScanner(this, adapter);
-            mScanner.setCallback(mScanCallback);
-        }
-
-        mScanner.startScanning();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (mScanner != null) {
-            mScanner.stopScanning();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mScanner != null) {
-            mScanner.setCallback(null);
-            mScanner = null;
-        }
+        mBluetoothScanner.startScanning();
     }
 
     private final BluetoothScanner.ScanCallback mScanCallback = new BluetoothScanner.ScanCallback() {
-
-        @Override
-        public void onStartScanning() {
-            Log.i(TAG, "Start Bluetooth scanning...");
-        }
 
         @Override
         public void onFailToStartScanning(int error) {

@@ -27,5 +27,6 @@ android {
 dependencies {
     implementation project(':common.style')
 
-    implementation deps.androidx.lifecycle.extensions
+    implementation deps.androidx.lifecycle.runtime
+    implementation deps.androidx.lifecycle.java8
 }

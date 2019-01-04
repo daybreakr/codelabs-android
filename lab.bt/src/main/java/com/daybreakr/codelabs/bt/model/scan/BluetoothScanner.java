@@ -4,12 +4,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 
+import androidx.lifecycle.LifecycleOwner;
+
 public abstract class BluetoothScanner {
 
     public interface ScanCallback {
-
-        default void onStartScanning() {
-        }
 
         default void onFailToStartScanning(int error) {
         }
@@ -24,8 +23,13 @@ public abstract class BluetoothScanner {
 
     private ScanCallback mCallback;
 
-    public static BluetoothScanner getScanner(Context context, BluetoothAdapter adapter) {
+    public static BluetoothScanner newScanner(Context context, BluetoothAdapter adapter) {
         return new SimpleBluetoothScanner(context, adapter);
+    }
+
+    public static BluetoothScanner newScanner(Context context, BluetoothAdapter adapter,
+                                              LifecycleOwner owner) {
+        return new LifecycleBluetoothScanner(owner, newScanner(context, adapter));
     }
 
     public void setCallback(ScanCallback callback) {
@@ -36,10 +40,7 @@ public abstract class BluetoothScanner {
 
     public abstract void stopScanning();
 
-    protected void notifyStartScanning() {
-        if (mCallback != null) {
-            mCallback.onStartScanning();
-        }
+    public void destroy() {
     }
 
     protected void notifyFailToStartScanning(int error) {

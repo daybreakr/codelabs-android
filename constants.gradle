@@ -16,7 +16,8 @@ ext {
             design: "com.google.android.material:material:1.0.0-rc01",
             lifecycle: [
                 extensions: "androidx.lifecycle:lifecycle-extensions:${versions.lifecycle}",
-                runtime: "androidx.lifecycle:lifecycle-runtime:${versions.lifecycle}"
+                runtime: "androidx.lifecycle:lifecycle-runtime:${versions.lifecycle}",
+                java8: "androidx.lifecycle:lifecycle-common-java8:${versions.lifecycle}"
             ]
         ]
     ]
