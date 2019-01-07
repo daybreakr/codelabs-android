@@ -9,42 +9,42 @@ import android.content.IntentFilter;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SimpleBluetoothScanner extends BluetoothScanner {
+class BasicBluetoothScanner extends BluetoothScanner {
+    private BluetoothAdapter mAdapter;
     private Context mContext;
-    private BluetoothAdapter mBluetoothAdapter;
 
     private final AtomicBoolean mIsStarting = new AtomicBoolean(false);
     private final AtomicBoolean mIsListening = new AtomicBoolean(false);
 
-    SimpleBluetoothScanner(Context context, BluetoothAdapter adapter) {
+    BasicBluetoothScanner(BluetoothAdapter adapter, Context context) {
+        mAdapter = adapter;
         mContext = context;
-        mBluetoothAdapter = adapter;
     }
 
     @Override
     public void startScanning() {
+        if (mAdapter == null) {
+            return;
+        }
+
         if (mIsStarting.compareAndSet(false, true)) {
             try {
-                if (mContext == null || mBluetoothAdapter == null) {
-                    return;
-                }
-
                 // Check for bluetooth enabled.
-                if (!mBluetoothAdapter.isEnabled()) {
-                    notifyFailToStartScanning(ERROR_BLUETOOTH_DISABLED);
+                if (!mAdapter.isEnabled()) {
+                    notifyFailToStart(new IllegalStateException("Bluetooth is disabled"));
                     return;
                 }
 
                 startListening();
 
                 // Waiting for callbacks if already processing discovering.
-                if (mBluetoothAdapter.isDiscovering()) {
+                if (mAdapter.isDiscovering()) {
                     return;
                 }
 
-                if (!mBluetoothAdapter.startDiscovery()) {
+                if (!mAdapter.startDiscovery()) {
                     stopListening();
-                    notifyFailToStartScanning(ERROR_START_DISCOVERY);
+                    notifyFailToStart(new RuntimeException("Fail to start discovery"));
                 }
             } finally {
                 mIsStarting.set(false);
@@ -54,42 +54,72 @@ public class SimpleBluetoothScanner extends BluetoothScanner {
 
     @Override
     public void stopScanning() {
-        if (mContext == null || mBluetoothAdapter == null) {
+        if (mAdapter == null) {
             return;
         }
 
-        if (mBluetoothAdapter.isDiscovering()) {
-            mBluetoothAdapter.cancelDiscovery();
+        if (mAdapter.isDiscovering()) {
+            mAdapter.cancelDiscovery();
         }
+    }
 
-        stopListening();
+    @Override
+    public boolean isScanning() {
+        return mAdapter != null && mAdapter.isDiscovering();
     }
 
     @Override
     public void destroy() {
-        setCallback(null);
+        // Try stop scanning first.
+        stopScanning();
+        stopListening();
+
         mContext = null;
-        mBluetoothAdapter = null;
+        mAdapter = null;
+        super.destroy();
     }
 
     private void startListening() {
+        if (mContext == null) {
+            return;
+        }
+
         if (mIsListening.compareAndSet(false, true)) {
-            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-            mContext.registerReceiver(mReceiver, filter);
+            registerReceiver();
         }
     }
 
     private void stopListening() {
-        if (mIsListening.compareAndSet(true, false)) {
-            mContext.unregisterReceiver(mReceiver);
+        if (mContext == null) {
+            return;
         }
+
+        if (mIsListening.compareAndSet(true, false)) {
+            unregisterReceiver();
+        }
+    }
+
+    private void registerReceiver() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        mContext.registerReceiver(mReceiver, filter);
+    }
+
+    private void unregisterReceiver() {
+        mContext.unregisterReceiver(mReceiver);
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent != null ? intent.getAction() : null;
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+            if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                notifyScanStarted();
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                notifyScanFinished();
+            } else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (device != null) {
                     notifyFoundDevice(device);

@@ -1,57 +1,71 @@
 package com.daybreakr.codelabs.bt.model.scan;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 
-import androidx.lifecycle.LifecycleOwner;
+import java.lang.ref.WeakReference;
 
 public abstract class BluetoothScanner {
 
     public interface ScanCallback {
 
-        default void onFailToStartScanning(int error) {
+        default void onScanStarted() {
+        }
+
+        default void onScanFailedToStart(Throwable error) {
         }
 
         default void onFoundDevice(BluetoothDevice device) {
         }
+
+        default void onScanFinished() {
+        }
     }
 
-    public static final int ERROR_BLUETOOTH_DISABLED = 1;
-
-    public static final int ERROR_START_DISCOVERY = 2;
-
-    private ScanCallback mCallback;
-
-    public static BluetoothScanner newScanner(Context context, BluetoothAdapter adapter) {
-        return new SimpleBluetoothScanner(context, adapter);
-    }
-
-    public static BluetoothScanner newScanner(Context context, BluetoothAdapter adapter,
-                                              LifecycleOwner owner) {
-        return new LifecycleBluetoothScanner(owner, newScanner(context, adapter));
-    }
-
-    public void setCallback(ScanCallback callback) {
-        mCallback = callback;
-    }
+    private WeakReference<ScanCallback> mCallbackRef;
 
     public abstract void startScanning();
 
     public abstract void stopScanning();
 
+    public abstract boolean isScanning();
+
     public void destroy() {
+        mCallbackRef = null;
     }
 
-    protected void notifyFailToStartScanning(int error) {
-        if (mCallback != null) {
-            mCallback.onFailToStartScanning(error);
+    public void setScanCallback(ScanCallback callback) {
+        mCallbackRef = new WeakReference<>(callback);
+    }
+
+    protected void notifyFailToStart(Throwable error) {
+        ScanCallback callback = getCallback();
+        if (callback != null) {
+            callback.onScanFailedToStart(error);
         }
     }
 
     protected void notifyFoundDevice(BluetoothDevice device) {
-        if (mCallback != null) {
-            mCallback.onFoundDevice(device);
+        ScanCallback callback = getCallback();
+        if (callback != null) {
+            callback.onFoundDevice(device);
         }
+    }
+
+    protected void notifyScanStarted() {
+        ScanCallback callback = getCallback();
+        if (callback != null) {
+            callback.onScanStarted();
+        }
+    }
+
+    protected void notifyScanFinished() {
+        ScanCallback callback = getCallback();
+        if (callback != null) {
+            callback.onScanFinished();
+        }
+    }
+
+    private ScanCallback getCallback() {
+        return mCallbackRef != null ? mCallbackRef.get() : null;
     }
 }

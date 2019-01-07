@@ -4,18 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
-public class LifecycleBluetoothScanner extends BluetoothScanner
-        implements DefaultLifecycleObserver {
+class LifecycleBluetoothScanner extends BluetoothScanner implements DefaultLifecycleObserver {
     private final BluetoothScanner mScanner;
 
-    LifecycleBluetoothScanner(LifecycleOwner owner, BluetoothScanner scanner) {
-        mScanner = scanner;
+    LifecycleBluetoothScanner(BluetoothScanner scanner, LifecycleOwner owner) {
         owner.getLifecycle().addObserver(this);
-    }
 
-    @Override
-    public void setCallback(ScanCallback callback) {
-        mScanner.setCallback(callback);
+        mScanner = scanner;
     }
 
     @Override
@@ -29,13 +24,18 @@ public class LifecycleBluetoothScanner extends BluetoothScanner
     }
 
     @Override
+    public boolean isScanning() {
+        return mScanner.isScanning();
+    }
+
+    @Override
     public void destroy() {
         mScanner.destroy();
     }
 
     @Override
-    public void onStart(@NonNull LifecycleOwner owner) {
-        startScanning();
+    public void setScanCallback(ScanCallback callback) {
+        mScanner.setScanCallback(callback);
     }
 
     @Override

@@ -17,4 +17,5 @@ dependencies {
     api deps.androidx.appcompat
     api deps.androidx.design
     api deps.androidx.recyclerview
+    api deps.androidx.swiperefreshlayout
 }
