@@ -28,7 +28,9 @@ public class BluetoothDeviceAdapter
 
     public void setDevices(Set<BluetoothDevice> devices) {
         mDevices.clear();
-        mDevices.addAll(devices);
+        if (devices != null && !devices.isEmpty()) {
+            mDevices.addAll(devices);
+        }
         notifyDataSetChanged();
 
         refreshEmptyView();
@@ -40,6 +42,10 @@ public class BluetoothDeviceAdapter
         notifyItemInserted(getItemCount());
 
         refreshEmptyView();
+    }
+
+    public void clearDevices() {
+        setDevices(null);
     }
 
     public void setOnItemClickListener(Consumer<BluetoothDevice> listener) {

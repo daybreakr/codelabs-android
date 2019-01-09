@@ -11,8 +11,6 @@ import com.daybreakr.codelabs.bt.model.scan.BluetoothScanner;
 import com.daybreakr.codelabs.bt.model.scan.BluetoothScannerFactory;
 import com.daybreakr.codelabs.bt.view.BluetoothDeviceAdapter;
 
-import java.util.Collections;
-
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,12 +20,11 @@ public class BluetoothMainActivity extends AppCompatActivity {
     private static final String TAG = "Codelabs-BT";
 
     private SwipeRefreshLayout mRefreshLayout;
-
     private BluetoothDeviceAdapter mPairedDevicesAdapter;
     private BluetoothDeviceAdapter mAvailableDevicesAdapter;
 
-    private BluetoothScanner mBluetoothScanner;
     private BluetoothPairingManager mBluePairingManager;
+    private BluetoothScanner mBluetoothScanner;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -42,37 +39,42 @@ public class BluetoothMainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_bluetooth_main);
         setupView();
 
+        mBluePairingManager = new BluetoothPairingManager(adapter);
+
         mBluetoothScanner = BluetoothScannerFactory.newScanner(adapter, this, this);
         mBluetoothScanner.setScanCallback(mScanCallback);
 
-        mBluePairingManager = new BluetoothPairingManager(adapter);
-
-        refreshDevices();
+        refreshLists();
     }
 
     private void setupView() {
         mRefreshLayout = findViewById(R.id.refresh_layout);
         mRefreshLayout.setOnRefreshListener(this::startScanning);
 
+        // paired devices list
         mPairedDevicesAdapter = new BluetoothDeviceAdapter();
         mPairedDevicesAdapter.setEmptyView(findViewById(R.id.paired_devices_empty_view));
-        RecyclerView pairedDevices = findViewById(R.id.paired_devices_list);
-        pairedDevices.setAdapter(mPairedDevicesAdapter);
+        RecyclerView pairedDevicesList = findViewById(R.id.paired_devices_list);
+        pairedDevicesList.setAdapter(mPairedDevicesAdapter);
 
+        // available devices list
         mAvailableDevicesAdapter = new BluetoothDeviceAdapter();
         mAvailableDevicesAdapter.setEmptyView(findViewById(R.id.available_devices_empty_view));
         mAvailableDevicesAdapter.setOnItemClickListener(this::startPairing);
-        RecyclerView availableDevices = findViewById(R.id.available_devices_list);
-        availableDevices.setAdapter(mAvailableDevicesAdapter);
+        RecyclerView availableDevicesList = findViewById(R.id.available_devices_list);
+        availableDevicesList.setAdapter(mAvailableDevicesAdapter);
     }
 
-    private void refreshDevices() {
+    private void refreshLists() {
+        // Refresh paired devices list.
         mPairedDevicesAdapter.setDevices(mBluePairingManager.getPairedDevices());
-        mAvailableDevicesAdapter.setDevices(Collections.emptySet());
+
+        // Clear available devices list.
+        mAvailableDevicesAdapter.clearDevices();
     }
 
     private void startScanning() {
-        refreshDevices();
+        refreshLists();
 
         if (mBluetoothScanner != null) {
             mBluetoothScanner.startScanning();

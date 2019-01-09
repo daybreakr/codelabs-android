@@ -16,5 +16,9 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".model.admin.BluetoothAdminResultActivity"
+            android:theme="@android:style/Theme.Translucent" />
+
     </application>
 </manifest>

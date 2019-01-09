@@ -43,7 +43,6 @@ class BasicBluetoothScanner extends BluetoothScanner {
                 }
 
                 if (!mAdapter.startDiscovery()) {
-                    stopListening();
                     notifyFailToStart(new RuntimeException("Fail to start discovery"));
                 }
             } finally {
